@@ -1,70 +1,41 @@
 #include "print.h"
 #include <klib/graphics/graphics.h>
 #include <klib/debug/serial.h>
-#include <fonts/font_8x8.h>
 
 #include <kernel/console/graph/dos.h>
+#include <ssfn.h>
 
-static void putchar_at(char c, u32 x, u32 y, u32 color)
-{
-    const u8 *glyph = font_8x8[(u8)c];
-
-    for (int dy = 0; dy < 8; dy++)
-    {
-        u8 row = glyph[dy];
-        for (int dx = 0; dx < 8; dx++)
-        {
-            if (row & (1 << (7 - dx)))
-            {
-                // Draw scaled pixel
-                for (u32 sy = 0; sy < font_scale; sy++) {
-                    for (u32 sx = 0; sx < font_scale; sx++) {
-                        putpixel(x + dx * font_scale + sx, y + dy * font_scale + sy, color);
-                    }
-                }
-            }
-        }
-    }
-}
-
-void putchar(char c, u32 color)
-{
-    u32 char_width = 8 * font_scale;
-    u32 char_height = 8 * font_scale;
-    u32 char_spacing = char_width;
-    u32 line_height = char_height + 2 * font_scale;
-
-    if (c == '\n')
-    {
-        cursor_x = 0; // past was 20
-        cursor_y += line_height;
-
-        // use console window scroll check
-        console_window_check_scroll();
-        return;
-    }
-
-    // Check if we need to wrap to next line
-    if (cursor_x + char_width >= fb_width)
-    {
-        cursor_x = 0; // past was 20
-        cursor_y += line_height;
-        console_window_check_scroll();
-    }
-
-    console_window_check_scroll();
-
-    putchar_at(c, cursor_x, cursor_y, color);
-    cursor_x += char_spacing;
+void putc(char c) {
+    // u32 char_width = 8 * font_scale;
+    // u32 char_height = 8 * font_scale;
+    // u32 char_spacing = char_width;
+    // u32 line_height = char_height + 2 * font_scale;
+    switch(c) {
+        // Newline
+        case '\n':
+          ssfn_dst.x = 0;
+          ssfn_dst.y += font_height;
+          console_window_check_scroll();
+          break;
+        default:
+          if(ssfn_dst.x + font_width >= (int)fb_width) {
+              ssfn_dst.x = 0;
+              ssfn_dst.y += font_height;
+          }
+          console_window_check_scroll();
+          ssfn_putc(c);
+          break;
+    };
 }
 
 void string(const char *str, u32 color)
 {
-    for (size_t i = 0; str[i]; i++)
-    {
-        putchar(str[i], color);
+    // prints everything from the os terminal to the host-terminal
+    for (size_t i = 0; str[i]; i++) {
+        set_fg_color(color);
+        putc(str[i]);
     }
-    printf("%s", str); // prints everything from the os terminal to the host-terminal
+    printf("%s", str);
 }
 
 void IntToString(int value, char *buffer)
@@ -110,11 +81,9 @@ void printInt(int value, u32 color)
 void print(const char *str, u32 color)
 {
     string(str, color);
-    //putchar('\n', color);
 }
 
 void reset_cursor(void)
 {
-    cursor_x = 0;
-    cursor_y = 0;
+    set_cursor_pos(0, 0);
 }

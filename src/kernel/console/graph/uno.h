@@ -2,8 +2,7 @@
 #define CONSOLE_UNO_H
 
 #include <types.h>
-#include <theme/stdclrs.h>
-#include <theme/doccr.h>
+#include <klib/graphics/graphics.h>
 
 #define BANNER_HEIGHT 15
 #define BANNER_Y_SPACING 4  // vertical spacing

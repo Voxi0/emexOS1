@@ -2,7 +2,8 @@ include common.mk
 
 # Find all C, C++ and Assembly files
 SRCS = $(shell find $(SRC_DIR) -name "*.c" -or -name "*.cpp" -or -name "*.asm")
-OBJS = $(SRCS:%=$(BUILD_DIR)/%.o)
+FONTS = $(shell find ./fonts -name "*.sfn")
+OBJS = $(SRCS:%=$(BUILD_DIR)/%.o) $(FONTS:%=$(BUILD_DIR)/%.o)
 
 .PHONY: all fetchDeps run clean
 all: $(ISO)
@@ -11,9 +12,14 @@ all: $(ISO)
 fetchDeps:
 	@echo "[DEPS] Fetching dependencies/libraries"
 	@mkdir -p $(INCLUDE_DIR)
+
 	@echo "[DEPS] Fetching Limine"
 	@rm -rf $(INCLUDE_DIR)/limine
 	@git clone https://codeberg.org/Limine/Limine.git --branch=v10.x-binary --depth=1 $(INCLUDE_DIR)/limine
+
+	@wget https://gitlab.com/bztsrc/scalable-font2/-/raw/master/ssfn.h -O $(INCLUDE_DIR)/ssfn.h
+
+	@echo "[DEPS] Fetched all dependencies/libraries"
 
 # Kernel binary
 $(BUILD_DIR)/kernel.elf: src/kernel/linker.ld $(OBJS)
@@ -50,6 +56,9 @@ $(BUILD_DIR)/%.cpp.o: %.cpp
 $(BUILD_DIR)/%.asm.o: %.asm
 	@mkdir -p $(dir $@)
 	$(VAS) $(ASFLAGS) $< -o $@
+$(BUILD_DIR)/%.sfn.o: %.sfn
+	@mkdir -p $(dir $@)
+	$(VLD) -r -b binary $< -o $@
 
 # Clean all build output
 clean:

@@ -112,8 +112,7 @@ void _start(void)
     //draw_rect(10, 10, fb_width - 20, fb_height - 20, GFX_BG);
 
     draw_logo();
-    cursor_x = 0;
-    cursor_y = 10;
+    set_cursor_pos(0, 10);
 
     printf("\n");
 
@@ -146,7 +145,6 @@ void _start(void)
 
     buf[0] = '\0'; // clear buffer so it can be used again
 
-
     print("[FONT] ", GFX_GRAY_70);
     print("scaling...\n", GFX_ST_WHITE);
     font_scale = 2;
@@ -165,10 +163,6 @@ void _start(void)
     // Initialize console and halt CPU
 
     //panic("test");
-
-    printf("\n");
-    printf("test printf\n");
-    printf("test printf\n");
     console_init();
     keyboard_poll();
 

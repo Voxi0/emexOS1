@@ -38,7 +38,7 @@ static void console_module_fini(void) {
 driver_module console_module = (driver_module) {
     .name = "console",
     .mount = "/dev/console",
-    .version = VERSION_NUM(0, 1, 1, 0), //should print like [v0.1.0.0]
+    .version = VERSION_NUM(0, 1, 1, 0),
     .init = console_module_init,
     .fini = console_module_fini,
     .open = NULL, // later for fs
@@ -58,20 +58,15 @@ void console_init(void)
     /*
     //module_register_driver(&console_module);
 
-    if (cursor_x == 0 && cursor_y == 0) {
+    if (get_cursor_x() == 0 && get_cursor_y() == 0) {
         clear(CONSOLESCREEN_COLOR);
         reset_cursor();
     }
     */
 
-    cursor_x = 0;
-    cursor_y = 0;
-
+    set_cursor_pos(0, 0);
     banner_init();
-
-    // Initialize console window
     console_window_init();
-
     shell_print_prompt();
 }
 
@@ -86,7 +81,7 @@ void console_handle_key(char c)
 {
     if (c == '\n') {
         // execute command when enter
-        putchar('\n', GFX_WHITE);
+        putc('\n');
 
         if (input_pos > 0) {
             input_buffer[input_pos] = '\0';
@@ -100,11 +95,8 @@ void console_handle_key(char c)
                 }
             }
 
-            if (has_chain) {
-                parse_and_execute_chained(input_buffer);
-            } else {
-                console_execute(input_buffer);
-            }
+            if (has_chain) parse_and_execute_chained(input_buffer);
+            else console_execute(input_buffer);
 
             input_pos = 0;
             input_buffer[0] = '\0';
@@ -115,7 +107,7 @@ void console_handle_key(char c)
     }
 
     if (c == '\r') {
-        putchar('\n', GFX_WHITE);
+        putc('\n');
         input_buffer[input_pos++] = '\n';
         return;
     }
@@ -126,13 +118,12 @@ void console_handle_key(char c)
             input_buffer[input_pos] = '\0';
 
             // just move the cursor back then print space, draw rext, and move back again
-            u32 char_width = 8 * font_scale;
-            if (cursor_x >= char_width) {
-                cursor_x -= char_width;
-                putchar(' ', GFX_WHITE);
-                cursor_x -= char_width;
-
-                draw_rect(cursor_x, cursor_y, char_width, 8 * font_scale, CONSOLESCREEN_BG_COLOR);
+            if (get_cursor_x() >= font_width) {
+                set_cursor_x(get_cursor_x() - font_width);
+                set_fg_color(GFX_WHITE);
+                putc(' ');
+                set_cursor_x(get_cursor_x() - font_width);
+                draw_rect(get_cursor_x(), get_cursor_y(), font_width, font_height, get_bg_color());
             }
         }
         return;
@@ -144,19 +135,15 @@ void console_handle_key(char c)
     if (input_pos < MAX_INPUT_LEN - 1) {
         input_buffer[input_pos++] = c;
         input_buffer[input_pos] = '\0';
-        putchar(c, GFX_WHITE);
+        set_fg_color(GFX_WHITE);
+        putc(c);
     }
 }
 
 void console_execute(const char *input)
 {
-    //TODO:
-    // OF UNKOWN BUGS THE SYSTEM CRASHES WHEN YOU ENTER A WRONG COMMAND
-    // not anymore :)
-
     // skip leading spaces
     while (*input == ' ') input++;
-
     if (*input == '\0') return;
 
     // find command name end

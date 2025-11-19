@@ -254,5 +254,6 @@ int str_contains(const char *str, const char *substr)
 
 void print_str(const char *str, u32 color){
     string(str, color);
-    putchar('\n', color);
+    set_fg_color(color);
+    putc('\n');
 }

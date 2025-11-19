@@ -8,38 +8,46 @@
 #include <klib/string/print.h>
 #include <klib/string/string.h>
 
+// Framebuffer
 extern u32 *framebuffer;
 extern u32 fb_width;
 extern u32 fb_height;
 extern u32 fb_pitch;
-extern u32 cursor_x;
-extern u32 cursor_y;
-extern u32 font_scale;
 
-// Font scale (1 = 8x8, 2 = 16x16, etc.)
-extern u32 font_scale;
+// Font
+extern u8 font_width;
+extern u8 font_height;
+extern u8 font_scale;
 
+// Basic
 void graphics_init(struct limine_framebuffer *fb);
-void putpixel(u32 x, u32 y, u32 color);
-
-u32 get_fb_width(void);
-u32 get_fb_height(void);
-u32* get_framebuffer(void);
-u32 get_fb_pitch(void);
-
 void reset_cursor(void);
 void clear(u32 color);
 void scroll_up(u32 lines);
+void putc(char c);
 
-void set_font_scale(u32 scale);
-u32 get_font_scale(void);
-
+// Draw stuff
+void putpixel(u32 x, u32 y, u32 color);
 void draw_rect(u32 x, u32 y, u32 width, u32 height, u32 color);
 void draw_circle(u32 cx, u32 cy, u32 radius, u32 color);
 void draw_line(u32 x0, u32 y0, u32 x1, u32 y1, u32 color);
 
-// Font management
-void graphics_set_font_scale(u32 scale);
-u32 graphics_get_font_scale(void);
+// Getters
+u32* get_framebuffer(void);
+u32 get_fb_width(void);
+u32 get_fb_height(void);
+u32 get_fb_pitch(void);
+u32 get_fg_color(void);
+u32 get_bg_color(void);
+int get_cursor_x(void);
+int get_cursor_y(void);
+
+// Setters
+void set_font_scale(u8 scale);
+void set_fg_color(u32 color);
+void set_bg_color(u32 color);
+void set_cursor_pos(int x, int y);
+void set_cursor_x(int pos);
+void set_cursor_y(int pos);
 
 #endif

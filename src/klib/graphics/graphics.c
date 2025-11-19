@@ -2,15 +2,18 @@
 #include <kernel/module/module.h>
 #include <fonts/font_8x8.h>
 
+#define SSFN_CONSOLEBITMAP_TRUECOLOR
+#include <ssfn.h>
+extern u8 _binary_fonts_unifont_sfn_start;
+
 //donnot put static before the uints!
 u32 *framebuffer = NULL;
 u32 fb_width = 0;
 u32 fb_height = 0;
 u32 fb_pitch = 0;
-u32 cursor_x = 16; // 8 = space-character means 8+ text
-u32 cursor_y = 16;
-u32 font_scale = 1; //for console scaling
-
+u8 font_scale = 1;
+u8 font_width = 8;
+u8 font_height = 16;
 
 void graphics_init(struct limine_framebuffer *fb)
 {
@@ -18,8 +21,14 @@ void graphics_init(struct limine_framebuffer *fb)
     fb_width = fb->width;
     fb_height = fb->height;
     fb_pitch = fb->pitch;
-    cursor_y = 20;
-    font_scale = 1;
+
+    ssfn_src = (ssfn_font_t *)&_binary_fonts_unifont_sfn_start;
+    ssfn_dst.ptr = (u8 *)fb->address;
+    ssfn_dst.w = fb_width;
+    ssfn_dst.h = fb_height;
+    ssfn_dst.p = fb_pitch;
+    ssfn_dst.x = ssfn_dst.y = 0;
+    ssfn_dst.bg = GFX_BG;
 
     print("Welcome to doccrOS \n", GFX_WHITE);
     print("v0.0.1 (alpha)\n", GFX_WHITE);
@@ -35,11 +44,8 @@ void graphics_init(struct limine_framebuffer *fb)
 
 void clear(u32 color)
 {
-    u32 w = get_fb_width();
-    u32 h = get_fb_height();
-    draw_rect(0, 0, w, h, color);
+    draw_rect(0, 0, fb_width, fb_height, color);
     reset_cursor();
-    print(" ", GFX_BG);
 }
 
 void scroll_up(u32 lines)
@@ -58,56 +64,30 @@ void scroll_up(u32 lines)
     // Clear bottom lines
     for (u32 y = fb_height - pixels_to_scroll; y < fb_height; y++) {
         for (u32 x = 0; x < fb_width; x++) {
-            framebuffer[y * pitch_dwords + x] = CONSOLESCREEN_BG_COLOR;
+            framebuffer[y * pitch_dwords + x] = ssfn_dst.bg;
         }
     }
 }
 
-void putpixel(u32 x, u32 y, u32 color)
-{
-    if (x < fb_width && y < fb_height) {
-        framebuffer[y * (fb_pitch / 4) + x] = color;
-    }
-}
+// Getters
+u32 *get_framebuffer(void) {return framebuffer;}
+u32 get_fb_width(void) {return fb_width;}
+u32 get_fb_height(void) {return fb_height;}
+u32 get_fb_pitch(void) {return fb_pitch;}
+u32 get_fg_color(void) {return ssfn_dst.fg;}
+u32 get_bg_color(void) {return ssfn_dst.bg;}
+int get_cursor_x(void) {return ssfn_dst.x;}
+int get_cursor_y(void) {return ssfn_dst.y;}
 
-u32 get_fb_width(void){
-    return fb_width;
+// Setters
+void set_fg_color(u32 color) {ssfn_dst.fg = color;}
+void set_bg_color(u32 color) {ssfn_dst.bg = color;}
+void set_cursor_x(int pos) {ssfn_dst.x = pos;}
+void set_cursor_y(int pos) {ssfn_dst.y = pos;}
+void set_cursor_pos(int x, int y) {
+    ssfn_dst.x = x;
+    ssfn_dst.y = y;
 }
-
-u32 get_fb_height(void){
-    return fb_height;
+void set_font_scale(u8 scale) {
+    if(scale >= 1 && scale <= 4) font_scale = scale;
 }
-
-u32* get_framebuffer(void){
-    return framebuffer;
-}
-
-u32 get_fb_pitch(void){
-    return fb_pitch;
-}
-
-void graphics_set_font_scale(u32 scale) {
-    if (scale >= 1 && scale <= 4) {
-        font_scale = scale;
-    }
-}
-
-u32 graphics_get_font_scale(void) {
-    return font_scale;
-}
-
-void set_font_scale(u32 scale) {
-    if (scale >= 1 && scale <= 4) {
-        font_scale = scale;
-    }
-}
-
-u32 get_font_scale(void) {
-    return font_scale;
-}
-
-/*void reset_cursor(void)
-{
-    cursor_x = 10;
-    cursor_y = 10;
-    }*/

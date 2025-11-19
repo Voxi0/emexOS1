@@ -1,5 +1,11 @@
 #include "graphics.h"
-//#include "draw.h"
+
+void putpixel(u32 x, u32 y, u32 color)
+{
+    if (x < fb_width && y < fb_height) {
+        framebuffer[y * (fb_pitch / 4) + x] = color;
+    }
+}
 
 void draw_rect(u32 x, u32 y, u32 width, u32 height, u32 color)
 {

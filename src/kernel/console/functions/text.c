@@ -23,10 +23,7 @@ FHDR(cmd_clear)
     }
     */
 
-    if (*s != '\0') {
-        return;
-    }
-
+    if (*s != '\0') return;
     shell_clear_screen(color);
     banner_force_update();
 }
@@ -66,9 +63,7 @@ FHDR(cmd_fsize)
     clear(CONSOLESCREEN_BG_COLOR);
     banner_force_update();
     console_window_update_layout();
-
-    cursor_x = CONSOLE_PADDING_X;
-    cursor_y = banner_get_height();
+    set_cursor_pos(CONSOLE_PADDING_X, banner_get_height());
 }
 
 FHDR(cmd_help)

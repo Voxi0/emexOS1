@@ -1,5 +1,4 @@
 #include "uno.h"
-#include <klib/graphics/graphics.h>
 #include <drivers/cmos/cmos.h>
 #include <klib/string/string.h>
 #include <kernel/exceptions/timer.h>
@@ -32,8 +31,8 @@ void banner_draw(void)
     u32 fb_w = get_fb_width();
     // based on screen scale
     u32 char_height = 8 * font_scale;
-    u32 o_cursor_x = cursor_x;
-    u32 o_cursor_y = cursor_y;
+    u32 o_cursor_x = get_cursor_x();
+    u32 o_cursor_y = get_cursor_y();
     u32 o_scale = font_scale;
     current_banner_height = char_height + (banner_y_s * 2);
 
@@ -43,12 +42,11 @@ void banner_draw(void)
     // use current screen_scale for banner
 
     // left = "emexOS"
-    cursor_x = 4;
-    cursor_y = banner_y + banner_y_s;
-
+    set_cursor_pos(4, banner_y + banner_y_s);
     const char *os_name = "emexOS";
     for (int i = 0; os_name[i]; i++) {
-        putchar(os_name[i], BANNER_TEXT_COLOR);
+        set_fg_color(BANNER_TEXT_COLOR);
+        putc(os_name[i]);
     }
 
     // centered = "console"
@@ -56,33 +54,26 @@ void banner_draw(void)
     // should be called after the current app
     const char *center_text = "console";
     int text_width = str_len(center_text) * (8 * font_scale + font_scale);
-    cursor_x = (fb_w - text_width) / 2;
-    cursor_y = banner_y + banner_y_s;
-
-    for (int i = 0; center_text[i]; i++) {
-        putchar(center_text[i], BANNER_TEXT_COLOR);
-    }
+    set_cursor_pos((fb_w - text_width / 2), (banner_y + banner_y_s));
+    print(center_text, BANNER_TEXT_COLOR);
 
     // right side = Date & Time
     banner_update_time();
 
     // restore cursor and scale from before
     font_scale = o_scale;
-    cursor_x = o_cursor_x;
-    cursor_y = o_cursor_y;
-
+    set_cursor_pos(o_cursor_x, o_cursor_y);
     needs_update = 0;
 }
 
 void banner_update_time(void)
 {
     u32 fb_w = get_fb_width();
-    u32 o_cursor_x = cursor_x;
-    u32 o_cursor_y = cursor_y;
+    u32 o_cursor_x = get_cursor_x();
+    u32 o_cursor_y = get_cursor_y();
     u32 o_scale = font_scale;
 
     // based on screen scale
-
     cmos_time_t time;
     cmos_read_time(&time);
 
@@ -115,25 +106,17 @@ void banner_update_time(void)
     //same for here its from cmos.c
 
     int text_len = str_len(time_buf);
-    int text_pixel_width = text_len * (8 * font_scale + font_scale);
-
-
+    int text_pixel_width = text_len * (font_width * font_scale + font_scale);
 
     draw_rect(fb_w - text_pixel_width - 8, banner_y, text_pixel_width + 8, current_banner_height, BANNER_BG_COLOR);
-
-    cursor_x = fb_w - text_pixel_width - 4;
-    cursor_y = banner_y + banner_y_s;
-
-    for (int i = 0; time_buf[i]; i++) {
-        putchar(time_buf[i], BANNER_TEXT_COLOR);
-    }
+    set_cursor_pos((fb_w - text_pixel_width - 4), (banner_y + banner_y_s));
+    print(time_buf, BANNER_TEXT_COLOR);
 
     //otherwise the time banner will overwrite the line
     draw_rect(fb_w - text_pixel_width - 8, banner_y + current_banner_height - font_scale, text_pixel_width + 8, font_scale, BANNER_BORDER_COLOR);
 
     font_scale = o_scale;
-    cursor_x = o_cursor_x;
-    cursor_y = o_cursor_y;
+    set_cursor_pos(o_cursor_x, o_cursor_y);
 }
 
 // private timer callback (c static)

@@ -2,6 +2,7 @@
 #define STRING_H
 
 #include <types.h>
+#include <klib/graphics/graphics.h>
 #include "print.h"
 
 void str_copy(char *dest, const char *src);

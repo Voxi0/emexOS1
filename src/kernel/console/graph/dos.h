@@ -2,6 +2,7 @@
 #define CONSOLE_DOS_H
 
 #include <types.h>
+#include <klib/graphics/graphics.h>
 
 #define CONSOLE_PADDING_X 0 // 15(baner) + 8(font scale) 23
 
