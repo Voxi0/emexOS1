@@ -4,6 +4,8 @@
 #include <klib/string/string.h>
 #include <kernel/exceptions/timer.h>
 
+#define BANNER_BORDER_THICKNESS 1
+
 static u32 banner_y = 0;
 static u32 banner_y_s = BANNER_Y_SPACING;
 static u8 last_second = 0;
@@ -31,20 +33,18 @@ void banner_draw(void)
 {
     u32 fb_w = get_fb_width();
     // based on screen scale
-    u32 char_height = 8 * font_scale;
-    u32 o_cursor_x = cursor_x;
-    u32 o_cursor_y = cursor_y;
-    u32 o_scale = font_scale;
-    current_banner_height = char_height + (banner_y_s * 2);
+    u32 o_cursor_x = ssfn_dst.x;
+    u32 o_cursor_y = ssfn_dst.y;
+    current_banner_height = font.height + (banner_y_s * 2);
 
     draw_rect(0, banner_y, fb_w, current_banner_height, BANNER_BG_COLOR); //comes from GFX_GRAY_20
-    draw_rect(0, banner_y + current_banner_height - font_scale, fb_w, font_scale, BANNER_BORDER_COLOR);
+    draw_rect(0, banner_y + current_banner_height - BANNER_BORDER_THICKNESS, fb_w, BANNER_BORDER_THICKNESS, BANNER_BORDER_COLOR);
 
     // use current screen_scale for banner
 
     // left = "emexOS"
-    cursor_x = 4;
-    cursor_y = banner_y + banner_y_s;
+    ssfn_dst.x = 4;
+    ssfn_dst.y = banner_y + banner_y_s;
 
     const char *os_name = "emexOS";
     for (int i = 0; os_name[i]; i++) {
@@ -55,9 +55,9 @@ void banner_draw(void)
     // TODO:
     // should be called after the current app
     const char *center_text = "console";
-    int text_width = str_len(center_text) * (8 * font_scale + font_scale);
-    cursor_x = (fb_w - text_width) / 2;
-    cursor_y = banner_y + banner_y_s;
+    int text_width = str_len(center_text) * font.width;
+    ssfn_dst.x = (fb_w - text_width) / 2;
+    ssfn_dst.y = banner_y + banner_y_s;
 
     for (int i = 0; center_text[i]; i++) {
         putchar(center_text[i], BANNER_TEXT_COLOR);
@@ -67,9 +67,8 @@ void banner_draw(void)
     banner_update_time();
 
     // restore cursor and scale from before
-    font_scale = o_scale;
-    cursor_x = o_cursor_x;
-    cursor_y = o_cursor_y;
+    ssfn_dst.x = o_cursor_x;
+    ssfn_dst.y = o_cursor_y;
 
     needs_update = 0;
 }
@@ -77,9 +76,8 @@ void banner_draw(void)
 void banner_update_time(void)
 {
     u32 fb_w = get_fb_width();
-    u32 o_cursor_x = cursor_x;
-    u32 o_cursor_y = cursor_y;
-    u32 o_scale = font_scale;
+    u32 o_cursor_x = ssfn_dst.x;
+    u32 o_cursor_y = ssfn_dst.y;
 
     // based on screen scale
 
@@ -115,25 +113,22 @@ void banner_update_time(void)
     //same for here its from cmos.c
 
     int text_len = str_len(time_buf);
-    int text_pixel_width = text_len * (8 * font_scale + font_scale);
-
-
+    int text_pixel_width = text_len * font.width;
 
     draw_rect(fb_w - text_pixel_width - 8, banner_y, text_pixel_width + 8, current_banner_height, BANNER_BG_COLOR);
 
-    cursor_x = fb_w - text_pixel_width - 4;
-    cursor_y = banner_y + banner_y_s;
+    ssfn_dst.x = fb_w - text_pixel_width - 4;
+    ssfn_dst.y = banner_y + banner_y_s;
 
     for (int i = 0; time_buf[i]; i++) {
         putchar(time_buf[i], BANNER_TEXT_COLOR);
     }
 
     //otherwise the time banner will overwrite the line
-    draw_rect(fb_w - text_pixel_width - 8, banner_y + current_banner_height - font_scale, text_pixel_width + 8, font_scale, BANNER_BORDER_COLOR);
+    draw_rect(fb_w - text_pixel_width - 8, banner_y + current_banner_height - BANNER_BORDER_THICKNESS, text_pixel_width + 8, BANNER_BORDER_THICKNESS, BANNER_BORDER_COLOR);
 
-    font_scale = o_scale;
-    cursor_x = o_cursor_x;
-    cursor_y = o_cursor_y;
+    ssfn_dst.x = o_cursor_x;
+    ssfn_dst.y = o_cursor_y;
 }
 
 // private timer callback (c static)

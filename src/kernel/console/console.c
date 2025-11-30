@@ -1,5 +1,6 @@
 #include "console.h"
 #include "functions.h"
+#include <kernel/mem/mem.h>
 
 static char input_buffer[MAX_INPUT_LEN];
 static int input_pos = 0;
@@ -51,7 +52,6 @@ driver_module console_module = (driver_module) {
 void console_init(void)
 {
     input_pos = 0;
-    input_buffer[0] = '\0';
 
     sconsole_theme(THEME_FLU);
     clear(CONSOLESCREEN_BG_COLOR);
@@ -59,15 +59,13 @@ void console_init(void)
     /*
     //module_register_driver(&console_module);
 
-    if (cursor_x == 0 && cursor_y == 0) {
+    if (ssfn_dst.x == 0 && ssfn_dst.y == 0) {
         clear(CONSOLESCREEN_COLOR);
         reset_cursor();
     }
     */
 
-    cursor_x = 0;
-    cursor_y = 0;
-
+    reset_cursor();
     banner_init();
 
     // Initialize console window
@@ -88,83 +86,66 @@ void console_run(void)
 void console_handle_key(char c)
 {
     cursor_c();
-    if (c == '\n') {
-        // execute command when enter
-        putchar('\n', GFX_WHITE);
 
-        if (input_pos > 0) {
-            input_buffer[input_pos] = '\0';
+    switch(c) {
+        case '\n':
+            // execute command when enter
+            putchar('\n', GFX_WHITE);
+            if (input_pos > 0) {
+                input_buffer[input_pos] = '\0';
 
-            // check for && and use chained execution
-            int has_chain = 0;
-            for (int i = 0; i < input_pos - 1; i++) {
-                if (input_buffer[i] == '&' && input_buffer[i+1] == '&') {
-                    has_chain = 1;
-                    break;
+                // check for && and use chained execution
+                int has_chain = 0;
+                for (int i = 0; i < input_pos - 1; i++) {
+                    if (input_buffer[i] == '&' && input_buffer[i+1] == '&') {
+                        has_chain = 1;
+                        break;
+                    }
                 }
+
+                if (has_chain) {
+                    parse_and_execute_chained(input_buffer);
+                } else {
+                    console_execute(input_buffer);
+                }
+
+                input_pos = 0;
             }
 
-            if (has_chain) {
-                parse_and_execute_chained(input_buffer);
-            } else {
-                console_execute(input_buffer);
+            cursor_reset_blink();
+            //cursor_draw();
+            shell_print_prompt();
+            return;
+        case '\r':
+            putchar('\n', GFX_WHITE);
+            input_buffer[input_pos++] = '\n';
+            cursor_draw();
+            return;
+        case '\b':
+            if (input_pos > 0) {
+                input_pos--;
+                ssfn_dst.x -= font.width;
+                draw_rect(ssfn_dst.x, ssfn_dst.y, font.width, font.height, CONSOLESCREEN_BG_COLOR);
+                cursor_reset_blink();
+                cursor_draw();
             }
-
-            input_pos = 0;
-            input_buffer[0] = '\0';
-        }
-
-        cursor_reset_blink();
-        //cursor_draw();
-        shell_print_prompt();
-        return;
-    }
-
-    if (c == '\r') {
-        putchar('\n', GFX_WHITE);
-        input_buffer[input_pos++] = '\n';
-        cursor_draw();
-        return;
-    }
-
-    if (c == '\b') {
-        if (input_pos > 0) {
-            input_pos--;
-            input_buffer[input_pos] = '\0';
-
-            // just move the cursor back then print space, draw rext, and move back again
-            u32 char_width = 8 * font_scale;
-            if (cursor_x >= char_width) {
-                cursor_x -= char_width;
-                putchar(' ', GFX_WHITE);
-                cursor_x -= char_width;
-
-                draw_rect(cursor_x, cursor_y, char_width, 8 * font_scale, CONSOLESCREEN_BG_COLOR);
+            return;
+        default:
+            // add character to buffer
+            if (input_pos < MAX_INPUT_LEN - 1) {
+                input_buffer[input_pos++] = c;
+                putchar(c, GFX_WHITE);
             }
-        }
-        cursor_reset_blink();
-        cursor_draw();
-        return;
+            console_window_check_scroll();
+            break;
     }
 
-    console_window_check_scroll();
-
-    // add character to buffer
-    if (input_pos < MAX_INPUT_LEN - 1) {
-        input_buffer[input_pos++] = c;
-        input_buffer[input_pos] = '\0';
-        putchar(c, GFX_WHITE);
-    }
     cursor_reset_blink();
     cursor_draw();
 }
 
 void console_execute(const char *input)
 {
-    //TODO:
-    // OF UNKOWN BUGS THE SYSTEM CRASHES WHEN YOU ENTER A WRONG COMMAND
-    // not anymore :)
-
     // skip leading spaces
     while (*input == ' ') input++;
 
@@ -191,7 +172,6 @@ void console_execute(const char *input)
     console_cmd_t *cmd = console_find_cmd(cmd_name);
     if (cmd) {
         cmd->func(args);
-
         banner_force_update();
     } else {
         print("> Unknown command, Type 'help' for available commands...", GFX_RED);

@@ -36,7 +36,9 @@ FHDR(cmd_fsize)
     if (*s == '\0') {
         char buf[64];
         str_copy(buf, "Current font size: ");
-        str_append_uint(buf, font_scale);
+        str_append_uint(buf, font.width);
+        str_append(buf, " x ");
+        str_append_uint(buf, font.height);
         print(buf, GFX_WHITE);
         return;
     }
@@ -57,7 +59,6 @@ FHDR(cmd_fsize)
     }
 
     clear(CONSOLESCREEN_BG_COLOR);
-    set_font_scale(size);
     /*char buf[64];
     str_copy(buf, " Font size set to ");
     str_append_uint(buf, size);
@@ -67,8 +68,8 @@ FHDR(cmd_fsize)
     banner_force_update();
     console_window_update_layout();
 
-    cursor_x = CONSOLE_PADDING_X;
-    cursor_y = banner_get_height();
+    ssfn_dst.x = CONSOLE_PADDING_X;
+    ssfn_dst.y = banner_get_height();
 }
 
 FHDR(cmd_help)

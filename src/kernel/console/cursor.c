@@ -11,7 +11,7 @@ static int cursor_enabled = 1;
 #define CURSOR_BLINK_RATE 300 // blinking
 //------------------------
 // "_"
-#define CURSOR_WIDTH 6
+#define CURSOR_WIDTH font.width
 #define CURSOR_HEIGHT 1
 //------------------------
 // "█"
@@ -26,7 +26,6 @@ static int cursor_enabled = 1;
 
 static void cursor_timer_callback() {
     if (!cursor_enabled) return;
-
     cursor_blink_counter++;
     if (cursor_blink_counter >= CURSOR_BLINK_RATE) {
         cursor_blink_counter = 0;
@@ -44,22 +43,13 @@ void cursor_(void) {
 
 void cursor_draw(void) {
     if (!cursor_visible || !cursor_enabled) return;
-
-    u32 char_width = CURSOR_WIDTH * font_scale;
-    u32 char_height = 8 * font_scale;
-    u32 cursor_y_pos = cursor_y + char_height - (CURSOR_HEIGHT * font_scale);
-
-    // this is the cursor
-    draw_rect(cursor_x, cursor_y_pos, char_width, CURSOR_HEIGHT * font_scale, CONSOLESCREEN_COLOR);
+    u32 cursor_y_pos = ssfn_dst.y + font.height - (CURSOR_HEIGHT);
+    draw_rect(ssfn_dst.x, cursor_y_pos, CURSOR_WIDTH, CURSOR_HEIGHT, CONSOLESCREEN_COLOR);
 }
 
 void cursor_c(void) {
-    u32 char_width = CURSOR_WIDTH * font_scale;
-    u32 char_height = 8 * font_scale;
-    u32 cursor_y_pos = cursor_y + char_height - (CURSOR_HEIGHT * font_scale);
-
-    // same cursor but inverted color
-    draw_rect(cursor_x, cursor_y_pos, char_width, CURSOR_HEIGHT * font_scale, CONSOLESCREEN_BG_COLOR);
+    u32 cursor_y_pos = ssfn_dst.y + font.height - (CURSOR_HEIGHT);
+    draw_rect(ssfn_dst.x, cursor_y_pos, CURSOR_WIDTH, CURSOR_HEIGHT, CONSOLESCREEN_BG_COLOR);
 }
 
 void cursor_redraw(void) {

@@ -2,18 +2,25 @@
   description = "emexos dev flake";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
+    systems.url = "github:nix-systems/default";
   };
-  outputs = inputs: inputs.flake-utils.lib.eachDefaultSystem(system: let
-    pkgs = import inputs.nixpkgs {inherit system;};
+  outputs = inputs: let
+    forEachSystem = inputs.nixpkgs.lib.genAttrs (import inputs.systems);
+    pkgs = forEachSystem (system: import inputs.nixpkgs {inherit system;});
   in {
-    devShells.default = pkgs.mkShellNoCC {
-      nativeBuildInputs = with pkgs; [
-        pkgsCross.x86_64-embedded.stdenv.cc
-        nasm
-        libisoburn
-        git
-      ];
-    };
-  });
+    devShells = forEachSystem (
+      system: {
+        default = pkgs.${system}.mkShellNoCC {
+          nativeBuildInputs = with pkgs.${system}; [
+            pkgsCross.x86_64-embedded.stdenv.cc
+            nasm
+            libisoburn
+            qemu
+            git
+            wget
+          ];
+        };
+      }
+    );
+  };
 }

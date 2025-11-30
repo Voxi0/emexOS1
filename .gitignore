@@ -10,7 +10,7 @@ include/limine
 .DS_Store
 **/.DS_Store
 
-src/kernel/pci/
+src/kernel/pci
 
 .gitignore
 

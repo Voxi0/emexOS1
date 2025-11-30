@@ -1,17 +1,21 @@
+#define SSFN_CONSOLEBITMAP_TRUECOLOR
 #include "graphics.h"
 #include <kernel/module/module.h>
-#include <fonts/font_8x8.h>
 #include <klib/debug/serial.h>
+
+extern ssfn_font_t *_binary_fonts_test_sfn_start;
 
 //donnot put static before the uints!
 u32 *framebuffer = NULL;
 u32 fb_width = 0;
 u32 fb_height = 0;
 u32 fb_pitch = 0;
-u32 cursor_x = 16; // 8 = space-character means 8+ text
-u32 cursor_y = 16;
-u32 font_scale = 1; //for console scaling
 
+font_t font = {
+    .src = &_binary_fonts_test_sfn_start,
+    .width = 12,
+    .height = 24,
+};
 
 void graphics_init(struct limine_framebuffer *fb)
 {
@@ -19,9 +23,13 @@ void graphics_init(struct limine_framebuffer *fb)
     fb_width = fb->width;
     fb_height = fb->height;
     fb_pitch = fb->pitch;
-    cursor_y = 0;
-    cursor_x = 0;
-    font_scale = 1;
+
+    ssfn_src = font.src;
+    ssfn_dst.ptr = (u8 *)framebuffer;
+    ssfn_dst.w = fb_width;
+    ssfn_dst.h = fb_height;
+    ssfn_dst.p = fb_pitch;
+    ssfn_dst.x = ssfn_dst.y = 0;
 
     print("Welcome to doccrOS \n", GFX_WHITE);
     print("v0.0.1 (alpha)\n", GFX_WHITE);
@@ -46,11 +54,8 @@ void graphics_init(struct limine_framebuffer *fb)
 
 void clear(u32 color)
 {
-    u32 w = get_fb_width();
-    u32 h = get_fb_height();
-    draw_rect(0, 0, w, h, color);
+    draw_rect(0, 0, fb_width, fb_height, color);
     reset_cursor();
-    print(" ", GFX_BG);
 }
 
 void scroll_up(u32 lines)
@@ -95,26 +100,6 @@ u32* get_framebuffer(void){
 
 u32 get_fb_pitch(void){
     return fb_pitch;
-}
-
-void graphics_set_font_scale(u32 scale) {
-    if (scale >= 1 && scale <= 4) {
-        font_scale = scale;
-    }
-}
-
-u32 graphics_get_font_scale(void) {
-    return font_scale;
-}
-
-void set_font_scale(u32 scale) {
-    if (scale >= 1 && scale <= 4) {
-        font_scale = scale;
-    }
-}
-
-u32 get_font_scale(void) {
-    return font_scale;
 }
 
 /*void reset_cursor(void)

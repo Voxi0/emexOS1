@@ -35,8 +35,6 @@
 // modules
 #include <kernel/module/module.h>
 
-#include <kernel/pci/pci.h>
-
 void _start(void)
 {
     theme_init();
@@ -111,8 +109,8 @@ void _start(void)
     //draw_rect(10, 10, fb_width - 20, fb_height - 20, green());
 
     draw_logo();
-    cursor_x = 0;
-    cursor_y = 10;
+    ssfn_dst.x = 0;
+    ssfn_dst.y = 10;
 
     BOOTUP_PRINTF("\n");
 
@@ -125,9 +123,6 @@ void _start(void)
     BOOTUP_PRINT_INT(freq, white());
     BOOTUP_PRINT(" 1ms tick)\n", white());
     timer_set_boot_time(); //for uptime command
-
-    pci_init();
-    //pci will get really useful with xhci/other usb
 
     module_init();
     // Register driver modules
@@ -142,18 +137,6 @@ void _start(void)
 
     buf[0] = '\0'; // clear buffer so it can be used again
 
-
-    BOOTUP_PRINT("[FONT] ", GFX_GRAY_70);
-    BOOTUP_PRINT("scaling...\n", white());
-    font_scale = 2;
-    str_append_uint(buf, font_scale);
-    BOOTUP_PRINT("[FONT] ", GFX_GRAY_70);
-    BOOTUP_PRINT("scaled to: ", white());
-    BOOTUP_PRINT(buf, white());
-    BOOTUP_PRINT("\n", white());
-
-    buf[0] = '\0'; // clear buffer so it can be used again
-
     BOOTUP_PRINT("[CONSOLE] ", GFX_GRAY_70);
     BOOTUP_PRINT("starting console...\n", white());
     //    hcf();
@@ -164,8 +147,6 @@ void _start(void)
     //panic("test");
 
     BOOTUP_PRINTF("\n");
-    BOOTUP_PRINTF("test printf\n");
-    BOOTUP_PRINTF("test printf\n");
     console_init();
     keyboard_poll();
 

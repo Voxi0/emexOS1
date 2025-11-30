@@ -1,25 +1,19 @@
 #include "print.h"
 #include <klib/graphics/graphics.h>
 #include <klib/debug/serial.h>
+#include <kernel/console/graph/dos.h>
 #include <fonts/font_8x8.h>
 
-#include <kernel/console/graph/dos.h>
-
-static void putchar_at(char c, u32 x, u32 y, u32 color)
-{
+static void putchar_at(char c, u32 x, u32 y, u32 color) {
     const u8 *glyph = font_8x8[(u8)c];
-
-    for (int dy = 0; dy < 8; dy++)
-    {
+    for (int dy = 0; dy < 8; dy++) {
         u8 row = glyph[dy];
-        for (int dx = 0; dx < 8; dx++)
-        {
-            if (row & (1 << (7 - dx)))
-            {
+        for (int dx = 0; dx < 8; dx++) {
+            if (row & (1 << (7 - dx))) {
                 // Draw scaled pixel
-                for (u32 sy = 0; sy < font_scale; sy++) {
-                    for (u32 sx = 0; sx < font_scale; sx++) {
-                        putpixel(x + dx * font_scale + sx, y + dy * font_scale + sy, color);
+                for (u32 sy = 0; sy < font.scale; sy++) {
+                    for (u32 sx = 0; sx < font.scale; sx++) {
+                        putpixel(x + dx * font.scale + sx, y + dy * font.scale + sy, color);
                     }
                 }
             }
@@ -29,41 +23,33 @@ static void putchar_at(char c, u32 x, u32 y, u32 color)
 
 void putchar(char c, u32 color)
 {
-    u32 char_width = 8 * font_scale;
-    u32 char_height = 8 * font_scale;
-    u32 char_spacing = char_width;
-    u32 line_height = char_height + 2 * font_scale;
+    // Force cursor to correct pixel cell
+    ssfn_dst.x = (ssfn_dst.x / font.width) * font.width;
+    ssfn_dst.y = (ssfn_dst.y / font.height) * font.height;
 
-    if (c == '\n')
-    {
-        cursor_x = 0; // past was 20
-        cursor_y += line_height;
-
-        // use console window scroll check
-        console_window_check_scroll();
-        return;
+    // Handle special characters and rendering normal characters
+    switch(c) {
+        case '\n':
+            ssfn_dst.x = 0;
+            ssfn_dst.y += font.height;
+            console_window_check_scroll();
+            return;
+        default:
+            if(ssfn_dst.x + font.width >= fb_width) {
+                ssfn_dst.x = 0;
+                ssfn_dst.y += font.height;
+                console_window_check_scroll();
+            }
+            
+            ssfn_dst.fg = color;
+            ssfn_putc(c);
+            break;
     }
-
-    // Check if we need to wrap to next line
-    if (cursor_x + char_width >= fb_width)
-    {
-        cursor_x = 0; // past was 20
-        cursor_y += line_height;
-        console_window_check_scroll();
-    }
-
-    console_window_check_scroll();
-
-    putchar_at(c, cursor_x, cursor_y, color);
-    cursor_x += char_spacing;
 }
 
 void string(const char *str, u32 color)
 {
-    for (size_t i = 0; str[i]; i++)
-    {
-        putchar(str[i], color);
-    }
+    for (size_t i = 0; str[i]; i++) putchar(str[i], color);
     printf("%s", str); // prints everything from the os terminal to the host-terminal
 }
 
@@ -115,6 +101,5 @@ void print(const char *str, u32 color)
 
 void reset_cursor(void)
 {
-    cursor_x = 0;
-    cursor_y = 0;
+    ssfn_dst.x = ssfn_dst.y = 0;
 }

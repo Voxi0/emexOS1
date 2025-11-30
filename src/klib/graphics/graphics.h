@@ -7,6 +7,13 @@
 #include <theme/stdclrs.h>
 #include <klib/string/print.h>
 #include <klib/string/string.h>
+#include <ssfn.h>
+
+typedef struct {
+    void *src;
+    u32 width, height;
+    u8 scale;
+} font_t;
 
 extern u32 *framebuffer;
 extern u32 fb_width;
@@ -15,9 +22,7 @@ extern u32 fb_pitch;
 extern u32 cursor_x;
 extern u32 cursor_y;
 extern u32 font_scale;
-
-// Font scale (1 = 8x8, 2 = 16x16, etc.)
-extern u32 font_scale;
+extern font_t font;
 
 void graphics_init(struct limine_framebuffer *fb);
 void putpixel(u32 x, u32 y, u32 color);
