@@ -12,9 +12,12 @@ all: $(ISO)
 fetchDeps:
 	@echo "[DEPS] Fetching dependencies/libraries"
 	@mkdir -p $(INCLUDE_DIR)
+	
 	@echo "[DEPS] Fetching Limine"
 	@rm -rf $(INCLUDE_DIR)/limine
-	@git clone https://codeberg.org/Limine/Limine.git --branch=v10.3.0-binary --depth=1 $(INCLUDE_DIR)/limine
+	@git clone https://codeberg.org/Limine/Limine.git --branch=v10.x-binary --depth=1 $(INCLUDE_DIR)/limine
+	@wget https://codeberg.org/Limine/limine-protocol/raw/branch/trunk/include/limine.h -O $(INCLUDE_DIR)/limine/limine.h
+
 	@echo "[DEPS] Fetching SSFN"
 	@wget https://gitlab.com/bztsrc/scalable-font2/-/raw/master/ssfn.h -O $(INCLUDE_DIR)/ssfn.h
 
